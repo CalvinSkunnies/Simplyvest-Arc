@@ -1,5 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Address } from "viem";
+import { parseUnits } from "viem";
+import StreamDatePicker from "./StreamDatePicker";
+import {
+  validateStreamDates,
+  validateAmount,
+  nowUnix,
+} from "../stream/validation";
+import type { ValidationError } from "../stream/validation";
 
 interface Props {
   onCreate: (
@@ -8,34 +16,71 @@ interface Props {
     amount: string,
     startTime: number,
     cliffTime: number,
-    endTime: number
+    endTime: number,
   ) => void;
   loading: boolean;
 }
 
 export default function CreateStream({ onCreate, loading }: Props) {
   const [recipient, setRecipient] = useState("");
-  const [token, setToken] = useState("0x07865c6E87B9F70255377e024ace6630C1Eaa37F");
+  const [token, setToken] = useState(
+    "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+  );
   const [amount, setAmount] = useState("");
-  const [startDelay, setStartDelay] = useState("0");
-  const [cliffDelay, setCliffDelay] = useState("0");
-  const [duration, setDuration] = useState("2592000");
+  const [startTime, setStartTime] = useState(nowUnix());
+  const [cliffTime, setCliffTime] = useState(nowUnix());
+  const [endTime, setEndTime] = useState(nowUnix() + 2592000);
+  const [submitted, setSubmitted] = useState(false);
+
+  const amtBigInt = useMemo(() => {
+    try {
+      return amount ? parseUnits(amount, 18) : 0n;
+    } catch {
+      return -1n;
+    }
+  }, [amount]);
+
+  const errors = useMemo(() => {
+    const list: ValidationError[] = [];
+    if (amtBigInt < 0n) {
+      list.push({ field: "amount", message: "Invalid amount format" });
+    } else {
+      const amtErr = validateAmount(amtBigInt);
+      if (amtErr) list.push(amtErr);
+    }
+    list.push(
+      ...validateStreamDates({
+        startTime,
+        cliffTime,
+        endTime,
+        amount: amtBigInt > 0n ? amtBigInt : 1n,
+      }),
+    );
+    return list;
+  }, [startTime, cliffTime, endTime, amtBigInt]);
+
+  const getError = (field: string) =>
+    submitted ? errors.find((e) => e.field === field)?.message : undefined;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const now = Math.floor(Date.now() / 1000);
+    setSubmitted(true);
+    if (errors.length > 0 || !recipient || !amount) return;
     onCreate(
       recipient as Address,
       token as Address,
       amount,
-      now + Number(startDelay),
-      now + Number(cliffDelay),
-      now + Number(duration)
+      startTime,
+      cliffTime,
+      endTime,
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card p-6 max-w-xl animate-fade-in">
+    <form
+      onSubmit={handleSubmit}
+      className="card p-6 max-w-xl animate-fade-in"
+    >
       <h2 className="section-title mb-6">Create Time Stream</h2>
 
       <div className="space-y-5">
@@ -69,53 +114,38 @@ export default function CreateStream({ onCreate, loading }: Props) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="1000"
-            className="input-field"
+            className={`input-field ${getError("amount") ? "border-error/50 focus:border-error" : ""}`}
             required
           />
+          {getError("amount") && (
+            <p className="text-error text-xs mt-1">{getError("amount")}</p>
+          )}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="label">Start delay</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min="0"
-                value={startDelay}
-                onChange={(e) => setStartDelay(e.target.value)}
-                className="input-field"
-              />
-              <span className="text-text-muted text-xs">sec</span>
-            </div>
-          </div>
-          <div>
-            <label className="label">Cliff delay</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min="0"
-                value={cliffDelay}
-                onChange={(e) => setCliffDelay(e.target.value)}
-                className="input-field"
-              />
-              <span className="text-text-muted text-xs">sec</span>
-            </div>
-          </div>
-          <div>
-            <label className="label">Duration</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min="1"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="2592000"
-                className="input-field"
-              />
-              <span className="text-text-muted text-xs">sec</span>
-            </div>
-          </div>
-        </div>
+        <StreamDatePicker
+          label="Start Time"
+          value={startTime}
+          onChange={setStartTime}
+          min={nowUnix() - 86400}
+          error={getError("startTime")}
+        />
+
+        <StreamDatePicker
+          label="Cliff Time"
+          value={cliffTime}
+          onChange={setCliffTime}
+          min={startTime > 0 ? startTime : undefined}
+          max={endTime > 0 ? endTime : undefined}
+          error={getError("cliffTime")}
+        />
+
+        <StreamDatePicker
+          label="End Time"
+          value={endTime}
+          onChange={setEndTime}
+          min={cliffTime > 0 ? cliffTime : undefined}
+          error={getError("endTime")}
+        />
       </div>
 
       <button
