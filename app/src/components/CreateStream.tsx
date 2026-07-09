@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { Address } from "viem";
 import { parseUnits } from "viem";
+import TokenSelect from "./TokenSelect";
 import StreamDatePicker from "./StreamDatePicker";
 import {
   validateStreamDates,
@@ -23,7 +24,7 @@ interface Props {
 
 export default function CreateStream({ onCreate, loading }: Props) {
   const [recipient, setRecipient] = useState("");
-  const [token, setToken] = useState(
+  const [token, setToken] = useState<Address>(
     "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
   );
   const [amount, setAmount] = useState("");
@@ -66,6 +67,7 @@ export default function CreateStream({ onCreate, loading }: Props) {
     e.preventDefault();
     setSubmitted(true);
     if (errors.length > 0 || !recipient || !amount) return;
+    if (amtBigInt <= 0n) return;
     onCreate(
       recipient as Address,
       token as Address,
@@ -97,12 +99,7 @@ export default function CreateStream({ onCreate, loading }: Props) {
 
         <div>
           <label className="label">Token</label>
-          <input
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            className="input-field font-mono text-xs"
-            required
-          />
+          <TokenSelect value={token} onChange={setToken} />
         </div>
 
         <div>
@@ -110,7 +107,7 @@ export default function CreateStream({ onCreate, loading }: Props) {
           <input
             type="number"
             step="0.000001"
-            min="0"
+            min="0.000001"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="1000"
