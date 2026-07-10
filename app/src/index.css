@@ -4,6 +4,68 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-base-950: 248 245 255;
+  --color-base-900: 240 235 248;
+  --color-base-800: 232 224 240;
+  --color-base-700: 216 208 224;
+  --color-base-600: 200 192 208;
+  --color-base-500: 184 176 192;
+
+  --color-plum-950: 26 5 46;
+  --color-plum-900: 47 13 80;
+  --color-plum-800: 65 10 134;
+  --color-plum-700: 93 14 192;
+  --color-plum-600: 110 17 176;
+  --color-plum-500: 130 0 218;
+  --color-plum-400: 152 16 250;
+  --color-plum-300: 176 74 255;
+  --color-plum-200: 192 126 255;
+  --color-plum-100: 212 168 255;
+
+  --color-bg: 248 245 255;
+  --color-bg-card: 255 255 255;
+  --color-bg-elevated: 240 235 248;
+  --color-text-primary: 26 10 46;
+  --color-text-secondary: 90 74 112;
+  --color-text-muted: 138 122 154;
+
+  --color-success: 4 120 87;
+  --color-error: 153 27 27;
+  --color-warning: 180 83 9;
+}
+
+.dark {
+  --color-base-950: 7 3 15;
+  --color-base-900: 10 7 32;
+  --color-base-800: 16 10 26;
+  --color-base-700: 26 18 40;
+  --color-base-600: 36 26 54;
+  --color-base-500: 42 26 64;
+
+  --color-plum-950: 26 5 46;
+  --color-plum-900: 47 13 80;
+  --color-plum-800: 65 10 134;
+  --color-plum-700: 93 14 192;
+  --color-plum-600: 110 17 176;
+  --color-plum-500: 130 0 218;
+  --color-plum-400: 152 16 250;
+  --color-plum-300: 176 74 255;
+  --color-plum-200: 192 126 255;
+  --color-plum-100: 212 168 255;
+
+  --color-bg: 7 3 15;
+  --color-bg-card: 15 10 30;
+  --color-bg-elevated: 26 18 40;
+  --color-text-primary: 232 224 240;
+  --color-text-secondary: 154 138 176;
+  --color-text-muted: 106 90 128;
+
+  --color-success: 4 120 87;
+  --color-error: 153 27 27;
+  --color-warning: 180 83 9;
+}
+
 @layer base {
   body {
     @apply bg-bg text-text-primary font-body antialiased;
@@ -37,13 +99,13 @@
   }
 
   .card-hover {
-    @apply card transition-all duration-300 hover:border-plum-800/40 hover:shadow-lg hover:shadow-plum-950/20;
+    @apply card transition-all duration-300 hover:border-plum-800/40 hover:shadow-lg;
   }
 
   .btn-primary {
-    @apply bg-plum-800 text-white font-semibold rounded-xl px-6 py-3
+    @apply inline-flex items-center justify-center gap-2 bg-plum-800 text-white font-semibold rounded-xl px-6 py-3
            transition-all duration-200
-           hover:bg-plum-700 hover:shadow-lg hover:shadow-plum-950/30
+           hover:bg-plum-700 hover:shadow-lg
            active:scale-[0.98]
            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100;
   }
@@ -69,8 +131,7 @@
            text-text-primary font-body text-sm
            placeholder:text-text-muted
            transition-all duration-200
-           focus:outline-none focus:border-plum-700 focus:ring-1 focus:ring-plum-700/30
-           focus:shadow-lg focus:shadow-plum-950/10;
+           focus:outline-none focus:border-plum-700 focus:ring-1 focus:ring-plum-700/30;
   }
 
   .label {
@@ -103,5 +164,16 @@
 
   .section-title {
     @apply text-lg font-semibold font-display text-text-primary;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

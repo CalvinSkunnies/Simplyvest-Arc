@@ -2,13 +2,13 @@ import { useState, useMemo } from "react";
 import { useWallet } from "./wallet";
 import { useContract } from "./contract";
 import ConnectWallet from "./components/ConnectWallet";
-import LandingHero from "./components/LandingHero";
+import LandingPage from "./components/LandingPage";
+import ThemeToggle from "./components/ThemeToggle";
 import Dashboard from "./components/Dashboard";
 import CreateStream from "./components/CreateStream";
 import CreateMilestoneStream from "./components/CreateMilestoneStream";
 import StreamList from "./components/StreamList";
 import TxToast from "./components/TxToast";
-import { formatUnits } from "viem";
 
 type Tab = "create" | "milestone" | "streams";
 
@@ -16,32 +16,26 @@ export default function App() {
   const { address, chainId, error, connect, disconnect } = useWallet();
   const contract = useContract();
   const [tab, setTab] = useState<Tab>("streams");
+  const [view, setView] = useState<"landing" | "app">("landing");
 
   const stats = useMemo(() => {
     if (!address) return { total: 0, active: 0, value: "", claimable: "" };
     return { total: 0, active: 0, value: "—", claimable: "—" };
   }, [address]);
 
-  if (!address) {
+  if (view === "landing") {
     return (
-      <div className="min-h-screen bg-bg">
-        <header className="fixed top-0 w-full z-50">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <span className="text-xl font-display font-bold tracking-tight">
-              <span className="text-text-primary">Simply</span>
-              <span className="text-plum-400">Vest</span>
-            </span>
-            <ConnectWallet
-              address={address}
-              chainId={chainId}
-              error={error}
-              onConnect={connect}
-              onDisconnect={disconnect}
-            />
-          </div>
-        </header>
-        <LandingHero onConnect={connect} />
-      </div>
+      <LandingPage
+        onLaunch={() => {
+          if (address) {
+            setView("app");
+          } else {
+            connect();
+          }
+        }}
+        onConnect={connect}
+        walletConnected={!!address}
+      />
     );
   }
 
@@ -53,13 +47,19 @@ export default function App() {
             <span className="text-text-primary">Simply</span>
             <span className="text-plum-400">Vest</span>
           </span>
-          <ConnectWallet
-            address={address}
-            chainId={chainId}
-            error={error}
-            onConnect={connect}
-            onDisconnect={disconnect}
-          />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <ConnectWallet
+              address={address}
+              chainId={chainId}
+              error={error}
+              onConnect={connect}
+              onDisconnect={() => {
+                disconnect();
+                setView("landing");
+              }}
+            />
+          </div>
         </div>
       </header>
 
@@ -105,7 +105,7 @@ export default function App() {
             loading={contract.loading}
           />
         )}
-        {tab === "streams" && (
+        {tab === "streams" && address && (
           <StreamList address={address} contract={contract} />
         )}
       </main>
