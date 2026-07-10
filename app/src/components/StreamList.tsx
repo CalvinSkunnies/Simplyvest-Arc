@@ -118,6 +118,7 @@ export default function StreamList({ address, contract }: Props) {
         {visible.map(({ id, stream, type }) => {
           const s = stream;
           const isCreator = s.creator.toLowerCase() === address.toLowerCase();
+          const isRecipient = s.recipient.toLowerCase() === address.toLowerCase();
           const isAuthority = type === "milestone" && (s as MilestoneStreamData).milestoneAuthority?.toLowerCase() === address.toLowerCase();
           const key = `${type}-${id}`;
 
@@ -129,6 +130,7 @@ export default function StreamList({ address, contract }: Props) {
               claimable={claimable[id] ?? 0n}
               currentUser={address}
               isCreator={isCreator}
+              isRecipient={isRecipient}
               isAuthority={isAuthority}
               withdrawAmount={withdrawAmounts[id] ?? ""}
               onWithdrawAmountChange={(val) => setWithdrawAmounts(p => ({ ...p, [id]: val }))}
@@ -144,6 +146,14 @@ export default function StreamList({ address, contract }: Props) {
                   contract.cancelMilestone(id as `0x${string}`);
                 } else {
                   contract.cancel(id as `0x${string}`);
+                }
+              }}
+              onDepositMore={(amount: string) => contract.depositMore(id as `0x${string}`, amount)}
+              onTransfer={(newRecipient: `0x${string}`) => {
+                if (type === "milestone") {
+                  contract.transferMilestoneStream(id as `0x${string}`, newRecipient);
+                } else {
+                  contract.transferStream(id as `0x${string}`, newRecipient);
                 }
               }}
               onTrigger={() => contract.triggerMilestone(id as `0x${string}`)}

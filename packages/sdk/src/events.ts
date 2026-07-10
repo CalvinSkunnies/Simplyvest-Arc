@@ -57,3 +57,22 @@ export interface MilestoneCancelledEvent {
   recipient: `0x${string}`;
   returnedToCreator: bigint;
 }
+
+export interface StreamDepositedEvent {
+  streamId: `0x${string}`;
+  creator: `0x${string}`;
+  addedAmount: bigint;
+  newTotal: bigint;
+}
+
+export interface StreamTransferredEvent {
+  streamId: `0x${string}`;
+  oldRecipient: `0x${string}`;
+  newRecipient: `0x${string}`;
+}
+
+export interface MilestoneStreamTransferredEvent {
+  streamId: `0x${string}`;
+  oldRecipient: `0x${string}`;
+  newRecipient: `0x${string}`;
+}

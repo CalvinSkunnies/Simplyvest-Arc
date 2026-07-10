@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import type { Address } from "viem";
 import { parseUnits } from "viem";
 import TokenSelect from "./TokenSelect";
-import StreamDatePicker from "./StreamDatePicker";
+import CalendarDatePicker from "./CalendarDatePicker";
 import {
   validateStreamDates,
   validateAmount,
@@ -28,9 +28,10 @@ export default function CreateStream({ onCreate, loading }: Props) {
     "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
   );
   const [amount, setAmount] = useState("");
-  const [startTime, setStartTime] = useState(nowUnix());
-  const [cliffTime, setCliffTime] = useState(nowUnix());
-  const [endTime, setEndTime] = useState(nowUnix() + 2592000);
+  const defaultStart = nowUnix() + 60;
+  const [startTime, setStartTime] = useState(defaultStart);
+  const [cliffTime, setCliffTime] = useState(defaultStart);
+  const [endTime, setEndTime] = useState(defaultStart + 2592000);
   const [submitted, setSubmitted] = useState(false);
 
   const amtBigInt = useMemo(() => {
@@ -50,12 +51,15 @@ export default function CreateStream({ onCreate, loading }: Props) {
       if (amtErr) list.push(amtErr);
     }
     list.push(
-      ...validateStreamDates({
-        startTime,
-        cliffTime,
-        endTime,
-        amount: amtBigInt > 0n ? amtBigInt : 1n,
-      }),
+      ...validateStreamDates(
+        {
+          startTime,
+          cliffTime,
+          endTime,
+          amount: amtBigInt > 0n ? amtBigInt : 1n,
+        },
+        nowUnix(),
+      ),
     );
     return list;
   }, [startTime, cliffTime, endTime, amtBigInt]);
@@ -119,28 +123,28 @@ export default function CreateStream({ onCreate, loading }: Props) {
           )}
         </div>
 
-        <StreamDatePicker
+        <CalendarDatePicker
           label="Start Time"
           value={startTime}
           onChange={setStartTime}
-          min={nowUnix() - 86400}
+          min={nowUnix() + 60}
           error={getError("startTime")}
         />
 
-        <StreamDatePicker
+        <CalendarDatePicker
           label="Cliff Time"
           value={cliffTime}
           onChange={setCliffTime}
-          min={startTime > 0 ? startTime : undefined}
-          max={endTime > 0 ? endTime : undefined}
+          min={startTime}
+          max={endTime}
           error={getError("cliffTime")}
         />
 
-        <StreamDatePicker
+        <CalendarDatePicker
           label="End Time"
           value={endTime}
           onChange={setEndTime}
-          min={cliffTime > 0 ? cliffTime : undefined}
+          min={cliffTime}
           error={getError("endTime")}
         />
       </div>

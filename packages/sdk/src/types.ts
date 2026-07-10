@@ -26,3 +26,19 @@ export interface MilestoneStream {
   milestoneReached: boolean;
   cancelled: boolean;
 }
+
+export interface StreamInput {
+  recipient: `0x${string}`;
+  token: `0x${string}`;
+  amount: bigint;
+  startTime: bigint;
+  cliffTime: bigint;
+  endTime: bigint;
+}
+
+export interface MilestoneStreamInput {
+  recipient: `0x${string}`;
+  token: `0x${string}`;
+  amount: bigint;
+  milestoneAuthority: `0x${string}`;
+}

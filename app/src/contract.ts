@@ -212,6 +212,63 @@ export function useContract() {
     [exec]
   );
 
+  const depositMore = useCallback(
+    async (streamId: `0x${string}`, amount: string) => {
+      return exec(async () => {
+        const wc = walletClient();
+        const [addr] = await wc.requestAddresses();
+        const tx = await wc.writeContract({
+          address: CONTRACT,
+          abi: SIMPLY_VEST_ABI,
+          functionName: "depositMore",
+          args: [streamId, parseUnits(amount, 18)],
+          account: addr,
+        });
+        setTxHash(tx);
+        return wait(tx);
+      });
+    },
+    [exec]
+  );
+
+  const transferStream = useCallback(
+    async (streamId: `0x${string}`, newRecipient: Address) => {
+      return exec(async () => {
+        const wc = walletClient();
+        const [addr] = await wc.requestAddresses();
+        const tx = await wc.writeContract({
+          address: CONTRACT,
+          abi: SIMPLY_VEST_ABI,
+          functionName: "transferStream",
+          args: [streamId, newRecipient],
+          account: addr,
+        });
+        setTxHash(tx);
+        return wait(tx);
+      });
+    },
+    [exec]
+  );
+
+  const transferMilestoneStream = useCallback(
+    async (streamId: `0x${string}`, newRecipient: Address) => {
+      return exec(async () => {
+        const wc = walletClient();
+        const [addr] = await wc.requestAddresses();
+        const tx = await wc.writeContract({
+          address: CONTRACT,
+          abi: SIMPLY_VEST_ABI,
+          functionName: "transferMilestoneStream",
+          args: [streamId, newRecipient],
+          account: addr,
+        });
+        setTxHash(tx);
+        return wait(tx);
+      });
+    },
+    [exec]
+  );
+
   const cancelMilestone = useCallback(
     async (streamId: `0x${string}`) => {
       return exec(async () => {
@@ -299,6 +356,9 @@ export function useContract() {
     createStream,
     withdraw,
     cancel,
+    depositMore,
+    transferStream,
+    transferMilestoneStream,
     createMilestoneStream,
     triggerMilestone,
     withdrawMilestone,

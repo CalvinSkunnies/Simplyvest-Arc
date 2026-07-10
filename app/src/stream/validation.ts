@@ -10,15 +10,21 @@ export interface ValidationError {
   message: string;
 }
 
-export function validateStreamDates({
-  startTime,
-  cliffTime,
-  endTime,
-}: StreamInputs): ValidationError[] {
+const MIN_DURATION = 60;
+const MAX_DURATION = 10 * 365 * 86400;
+
+export function validateStreamDates(
+  inputs: StreamInputs,
+  now: number = nowUnix(),
+): ValidationError[] {
+  const { startTime, cliffTime, endTime } = inputs;
   const errors: ValidationError[] = [];
 
   if (startTime <= 0) {
     errors.push({ field: "startTime", message: "Start time must be a positive unix timestamp" });
+  }
+  if (startTime <= now) {
+    errors.push({ field: "startTime", message: "Start time must be in the future" });
   }
   if (cliffTime < startTime) {
     errors.push({ field: "cliffTime", message: "Cliff must be on or after start time" });
@@ -29,7 +35,10 @@ export function validateStreamDates({
   if (cliffTime > endTime) {
     errors.push({ field: "cliffTime", message: "Cliff must be on or before end time" });
   }
-  if (endTime - startTime > 10 * 365 * 86400) {
+  if (endTime - startTime < MIN_DURATION) {
+    errors.push({ field: "endTime", message: `Duration must be at least ${MIN_DURATION} seconds` });
+  }
+  if (endTime - startTime > MAX_DURATION) {
     errors.push({ field: "endTime", message: "Duration exceeds 10 year maximum" });
   }
 

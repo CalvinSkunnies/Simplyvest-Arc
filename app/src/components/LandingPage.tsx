@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useWallet } from "../wallet";
 import ThemeToggle from "./ThemeToggle";
-
-interface Props {
-  onLaunch: () => void;
-  onConnect: () => void;
-  walletConnected: boolean;
-}
 
 const FEATURES = [
   {
@@ -85,15 +81,23 @@ function ScrollReveal({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function LandingPage({ onLaunch, onConnect, walletConnected }: Props) {
+export default function LandingPage() {
+  const navigate = useNavigate();
+  const { address, connect } = useWallet();
+  const walletConnected = !!address;
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleLaunch = () => {
+    if (!address) connect();
+    navigate("/app");
+  };
 
   return (
     <div className="min-h-screen bg-bg">
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 glass border-b border-base-500/20">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="#top" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-plum-800 flex items-center justify-center text-white text-sm font-bold font-display">
               SV
             </div>
@@ -101,7 +105,7 @@ export default function LandingPage({ onLaunch, onConnect, walletConnected }: Pr
               <span className="text-text-primary">Simply</span>
               <span className="text-plum-400">Vest</span>
             </span>
-          </a>
+          </Link>
 
           <div className="hidden md:flex items-center gap-6">
             <a href="#how" className="text-text-secondary text-sm hover:text-text-primary transition-colors">
@@ -118,11 +122,11 @@ export default function LandingPage({ onLaunch, onConnect, walletConnected }: Pr
           <div className="flex items-center gap-3">
             <ThemeToggle />
             {walletConnected ? (
-              <button onClick={onLaunch} className="btn-primary text-sm px-5 py-2">
+              <button onClick={handleLaunch} className="btn-primary text-sm px-5 py-2">
                 Launch App
               </button>
             ) : (
-              <button onClick={onConnect} className="btn-primary text-sm px-5 py-2">
+              <button onClick={handleLaunch} className="btn-primary text-sm px-5 py-2">
                 Connect Wallet
               </button>
             )}
@@ -166,7 +170,7 @@ export default function LandingPage({ onLaunch, onConnect, walletConnected }: Pr
 
           <ScrollReveal>
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <button onClick={walletConnected ? onLaunch : onConnect} className="btn-primary text-lg px-10 py-4 animate-pulse-glow">
+              <button onClick={handleLaunch} className="btn-primary text-lg px-10 py-4 animate-pulse-glow">
                 {walletConnected ? "Launch App →" : "Connect Wallet"}
               </button>
               <a href="#how" className="btn-secondary text-lg px-8 py-4">
@@ -341,7 +345,7 @@ export default function LandingPage({ onLaunch, onConnect, walletConnected }: Pr
             </p>
           </ScrollReveal>
           <ScrollReveal>
-            <button onClick={walletConnected ? onLaunch : onConnect} className="btn-primary text-lg px-10 py-4 animate-pulse-glow">
+            <button onClick={handleLaunch} className="btn-primary text-lg px-10 py-4 animate-pulse-glow">
               {walletConnected ? "Launch App →" : "Connect Wallet"}
             </button>
           </ScrollReveal>

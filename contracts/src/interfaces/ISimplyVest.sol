@@ -27,6 +27,22 @@ interface ISimplyVest {
         bool cancelled;
     }
 
+    struct StreamInput {
+        address recipient;
+        address token;
+        uint256 amount;
+        uint256 startTime;
+        uint256 cliffTime;
+        uint256 endTime;
+    }
+
+    struct MilestoneStreamInput {
+        address recipient;
+        address token;
+        uint256 amount;
+        address milestoneAuthority;
+    }
+
     // --- Events ---
 
     event StreamCreated(
@@ -71,6 +87,18 @@ interface ISimplyVest {
         bytes32 indexed streamId, address indexed creator, address indexed recipient, uint256 returnedToCreator
     );
 
+    event StreamDeposited(
+        bytes32 indexed streamId, address indexed creator, uint256 addedAmount, uint256 newTotal
+    );
+
+    event StreamTransferred(
+        bytes32 indexed streamId, address indexed oldRecipient, address indexed newRecipient
+    );
+
+    event MilestoneStreamTransferred(
+        bytes32 indexed streamId, address indexed oldRecipient, address indexed newRecipient
+    );
+
     // --- Errors ---
 
     error ZeroAmount();
@@ -90,6 +118,9 @@ interface ISimplyVest {
     error AlreadyWithdrawn();
     error InvalidRecipient();
     error InvalidMilestoneAuthority();
+    error StreamFinished();
+    error AlreadyTransferred();
+    error ArrayLengthMismatch();
 
     // --- Stream Functions ---
 
@@ -102,6 +133,12 @@ interface ISimplyVest {
         uint256 endTime
     ) external returns (bytes32 streamId);
 
+    function batchCreateStreams(StreamInput[] calldata inputs) external returns (bytes32[] memory ids);
+
+    function depositMore(bytes32 streamId, uint256 amount) external;
+
+    function transferStream(bytes32 streamId, address newRecipient) external;
+
     function withdraw(bytes32 streamId, uint256 amount) external;
 
     function cancel(bytes32 streamId) external;
@@ -111,6 +148,12 @@ interface ISimplyVest {
     function createMilestoneStream(address recipient, address token, uint256 amount, address milestoneAuthority)
         external
         returns (bytes32 streamId);
+
+    function batchCreateMilestoneStreams(MilestoneStreamInput[] calldata inputs)
+        external
+        returns (bytes32[] memory ids);
+
+    function transferMilestoneStream(bytes32 streamId, address newRecipient) external;
 
     function triggerMilestone(bytes32 streamId) external;
 

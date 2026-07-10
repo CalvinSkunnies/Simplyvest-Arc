@@ -1,52 +1,36 @@
 import { useState, useMemo } from "react";
-import { useWallet } from "./wallet";
-import { useContract } from "./contract";
-import ConnectWallet from "./components/ConnectWallet";
-import LandingPage from "./components/LandingPage";
-import ThemeToggle from "./components/ThemeToggle";
-import Dashboard from "./components/Dashboard";
-import CreateStream from "./components/CreateStream";
-import CreateMilestoneStream from "./components/CreateMilestoneStream";
-import StreamList from "./components/StreamList";
-import TxToast from "./components/TxToast";
+import { useNavigate } from "react-router-dom";
+import { useWallet } from "../wallet";
+import { useContract } from "../contract";
+import ConnectWallet from "./ConnectWallet";
+import ThemeToggle from "./ThemeToggle";
+import Dashboard from "./Dashboard";
+import CreateStream from "./CreateStream";
+import CreateMilestoneStream from "./CreateMilestoneStream";
+import StreamList from "./StreamList";
+import TxToast from "./TxToast";
 
 type Tab = "create" | "milestone" | "streams";
 
-export default function App() {
+export default function AppPage() {
+  const navigate = useNavigate();
   const { address, chainId, error, connect, disconnect } = useWallet();
   const contract = useContract();
   const [tab, setTab] = useState<Tab>("streams");
-  const [view, setView] = useState<"landing" | "app">("landing");
 
   const stats = useMemo(() => {
     if (!address) return { total: 0, active: 0, value: "", claimable: "" };
     return { total: 0, active: 0, value: "—", claimable: "—" };
   }, [address]);
 
-  if (view === "landing") {
-    return (
-      <LandingPage
-        onLaunch={() => {
-          if (address) {
-            setView("app");
-          } else {
-            connect();
-          }
-        }}
-        onConnect={connect}
-        walletConnected={!!address}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-bg">
       <header className="sticky top-0 z-50 glass border-b border-base-500/20">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <span className="text-lg font-display font-bold tracking-tight">
+          <button onClick={() => navigate("/")} className="text-lg font-display font-bold tracking-tight hover:opacity-80 transition-opacity">
             <span className="text-text-primary">Simply</span>
             <span className="text-plum-400">Vest</span>
-          </span>
+          </button>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <ConnectWallet
@@ -56,7 +40,7 @@ export default function App() {
               onConnect={connect}
               onDisconnect={() => {
                 disconnect();
-                setView("landing");
+                navigate("/");
               }}
             />
           </div>

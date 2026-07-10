@@ -30,6 +30,17 @@ contract SimplyVest is ISimplyVest {
         uint256 cliffTime,
         uint256 endTime
     ) external returns (bytes32 streamId) {
+        return _createStream(recipient, token, amount, startTime, cliffTime, endTime);
+    }
+
+    function _createStream(
+        address recipient,
+        address token,
+        uint256 amount,
+        uint256 startTime,
+        uint256 cliffTime,
+        uint256 endTime
+    ) internal returns (bytes32 streamId) {
         if (amount == 0) revert ZeroAmount();
         if (recipient == address(0)) revert InvalidRecipient();
         if (startTime >= endTime) revert InvalidTimeRange();
@@ -59,6 +70,46 @@ contract SimplyVest is ISimplyVest {
         emit StreamCreated(streamId, msg.sender, recipient, token, amount, startTime, cliffTime, endTime);
     }
 
+    function batchCreateStreams(StreamInput[] calldata inputs) external returns (bytes32[] memory ids) {
+        ids = new bytes32[](inputs.length);
+        for (uint256 i = 0; i < inputs.length; i++) {
+            ids[i] = _createStream(
+                inputs[i].recipient,
+                inputs[i].token,
+                inputs[i].amount,
+                inputs[i].startTime,
+                inputs[i].cliffTime,
+                inputs[i].endTime
+            );
+        }
+    }
+
+    function depositMore(bytes32 streamId, uint256 amount) external {
+        if (amount == 0) revert ZeroAmount();
+        Stream storage stream = streams[streamId];
+        if (msg.sender != stream.creator) revert Unauthorized();
+        if (stream.cancelled) revert AlreadyCancelled();
+        if (stream.amountWithdrawn == stream.amount) revert StreamFinished();
+
+        IERC20(stream.token).safeTransferFrom(msg.sender, address(this), amount);
+        stream.amount += amount;
+
+        emit StreamDeposited(streamId, msg.sender, amount, stream.amount);
+    }
+
+    function transferStream(bytes32 streamId, address newRecipient) external {
+        if (newRecipient == address(0)) revert InvalidRecipient();
+        Stream storage stream = streams[streamId];
+        if (msg.sender != stream.recipient) revert Unauthorized();
+        if (stream.cancelled) revert AlreadyCancelled();
+        if (stream.amountWithdrawn == stream.amount) revert StreamFinished();
+
+        address oldRecipient = stream.recipient;
+        stream.recipient = newRecipient;
+
+        emit StreamTransferred(streamId, oldRecipient, newRecipient);
+    }
+
     function withdraw(bytes32 streamId, uint256 amount) external {
         Stream storage stream = streams[streamId];
 
@@ -84,7 +135,7 @@ contract SimplyVest is ISimplyVest {
     function cancel(bytes32 streamId) external {
         Stream storage stream = streams[streamId];
 
-        if (msg.sender != stream.creator) revert Unauthorized();
+        if (msg.sender != stream.creator && msg.sender != stream.recipient) revert Unauthorized();
         if (stream.cancelled) revert AlreadyCancelled();
         if (block.timestamp >= stream.endTime) revert StreamExpired();
 
@@ -113,6 +164,13 @@ contract SimplyVest is ISimplyVest {
         external
         returns (bytes32 streamId)
     {
+        return _createMilestoneStream(recipient, token, amount, milestoneAuthority);
+    }
+
+    function _createMilestoneStream(address recipient, address token, uint256 amount, address milestoneAuthority)
+        internal
+        returns (bytes32 streamId)
+    {
         if (amount == 0) revert ZeroAmount();
         if (recipient == address(0)) revert InvalidRecipient();
         if (milestoneAuthority == address(0)) revert InvalidMilestoneAuthority();
@@ -136,6 +194,31 @@ contract SimplyVest is ISimplyVest {
         milestoneStreamIds.push(streamId);
 
         emit MilestoneStreamCreated(streamId, msg.sender, recipient, token, amount, milestoneAuthority);
+    }
+
+    function batchCreateMilestoneStreams(MilestoneStreamInput[] calldata inputs)
+        external
+        returns (bytes32[] memory ids)
+    {
+        ids = new bytes32[](inputs.length);
+        for (uint256 i = 0; i < inputs.length; i++) {
+            ids[i] = _createMilestoneStream(
+                inputs[i].recipient, inputs[i].token, inputs[i].amount, inputs[i].milestoneAuthority
+            );
+        }
+    }
+
+    function transferMilestoneStream(bytes32 streamId, address newRecipient) external {
+        if (newRecipient == address(0)) revert InvalidRecipient();
+        MilestoneStream storage ms = milestoneStreams[streamId];
+        if (msg.sender != ms.recipient) revert Unauthorized();
+        if (ms.cancelled) revert AlreadyCancelled();
+        if (ms.milestoneReached && ms.amountWithdrawn > 0) revert StreamFinished();
+
+        address oldRecipient = ms.recipient;
+        ms.recipient = newRecipient;
+
+        emit MilestoneStreamTransferred(streamId, oldRecipient, newRecipient);
     }
 
     function triggerMilestone(bytes32 streamId) external {
@@ -168,7 +251,7 @@ contract SimplyVest is ISimplyVest {
     function cancelMilestone(bytes32 streamId) external {
         MilestoneStream storage ms = milestoneStreams[streamId];
 
-        if (msg.sender != ms.creator) revert Unauthorized();
+        if (msg.sender != ms.creator && msg.sender != ms.recipient) revert Unauthorized();
         if (ms.cancelled) revert AlreadyCancelled();
         if (ms.milestoneReached) revert FullyVested();
 
@@ -200,8 +283,6 @@ contract SimplyVest is ISimplyVest {
         if (stream.cancelled) return 2;
         if (stream.amountWithdrawn == stream.amount) return 1;
         if (block.timestamp >= stream.endTime && stream.amountWithdrawn < stream.amount) {
-            uint256 claimed = stream.amountWithdrawn;
-            if (claimed > 0) return 1;
             return 1;
         }
         return 0;

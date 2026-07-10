@@ -19,83 +19,114 @@ const MONTH = 2592000;
 // ─── Date Validation ────────────────────────────────────────────────
 
 describe("validateStreamDates", () => {
-  const now = 1_700_000_000;
+  const past = 1_700_000_000; // a reference "now" in the past
+  const start = past + HOUR;  // all valid streams start in the future
 
   it("accepts valid stream with cliff at start", () => {
     const errs = validateStreamDates({
-      startTime: now,
-      cliffTime: now,
-      endTime: now + MONTH,
+      startTime: start,
+      cliffTime: start,
+      endTime: start + MONTH,
       amount: 1000n,
-    });
+    }, past);
     assert.deepEqual(errs, []);
   });
 
   it("accepts cliff == end (lump sum at end)", () => {
     const errs = validateStreamDates({
-      startTime: now,
-      cliffTime: now + MONTH,
-      endTime: now + MONTH,
+      startTime: start,
+      cliffTime: start + MONTH,
+      endTime: start + MONTH,
       amount: 1000n,
-    });
+    }, past);
     assert.deepEqual(errs, []);
+  });
+
+  it("rejects start time in the past", () => {
+    const errs = validateStreamDates({
+      startTime: past,
+      cliffTime: past + DAY,
+      endTime: past + MONTH,
+      amount: 1000n,
+    }, past);
+    assert.ok(errs.some((e) => e.field === "startTime"));
+  });
+
+  it("accepts start time 1 second in the future", () => {
+    const errs = validateStreamDates({
+      startTime: past + 1,
+      cliffTime: past + 1,
+      endTime: past + 61,
+      amount: 1000n,
+    }, past);
+    assert.equal(errs.filter((e) => e.field === "startTime").length, 0);
   });
 
   it("rejects cliff before start", () => {
     const errs = validateStreamDates({
-      startTime: now,
-      cliffTime: now - DAY,
-      endTime: now + MONTH,
+      startTime: start,
+      cliffTime: start - DAY,
+      endTime: start + MONTH,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs.some((e) => e.field === "cliffTime"));
   });
 
   it("rejects end <= start", () => {
     const errs1 = validateStreamDates({
-      startTime: now,
-      cliffTime: now,
-      endTime: now,
+      startTime: start,
+      cliffTime: start,
+      endTime: start,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs1.some((e) => e.field === "endTime"));
 
     const errs2 = validateStreamDates({
-      startTime: now,
-      cliffTime: now,
-      endTime: now - DAY,
+      startTime: start,
+      cliffTime: start,
+      endTime: start - DAY,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs2.some((e) => e.field === "endTime"));
   });
 
   it("rejects cliff after end", () => {
     const errs = validateStreamDates({
-      startTime: now,
-      cliffTime: now + MONTH * 2,
-      endTime: now + MONTH,
+      startTime: start,
+      cliffTime: start + MONTH * 2,
+      endTime: start + MONTH,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs.some((e) => e.field === "cliffTime"));
+  });
+
+  it("rejects duration less than 60 seconds", () => {
+    const errs = validateStreamDates({
+      startTime: start,
+      cliffTime: start,
+      endTime: start + 30,
+      amount: 1000n,
+    }, past);
+    assert.ok(errs.some((e) => e.field === "endTime"));
   });
 
   it("rejects duration exceeding 10 years", () => {
     const errs = validateStreamDates({
-      startTime: now,
-      cliffTime: now,
-      endTime: now + 11 * 365 * DAY,
+      startTime: start,
+      cliffTime: start,
+      endTime: start + 11 * 365 * DAY,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs.some((e) => e.field === "endTime"));
   });
 
   it("accepts max 10 year duration", () => {
     const errs = validateStreamDates({
-      startTime: now,
-      cliffTime: now,
-      endTime: now + 10 * 365 * DAY,
+      startTime: start,
+      cliffTime: start,
+      endTime: start + 10 * 365 * DAY,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(!errs.some((e) => e.field === "endTime"));
   });
 
@@ -105,7 +136,7 @@ describe("validateStreamDates", () => {
       cliffTime: 100,
       endTime: 200,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs.some((e) => e.field === "startTime"));
   });
 
@@ -115,7 +146,7 @@ describe("validateStreamDates", () => {
       cliffTime: 100,
       endTime: 200,
       amount: 1000n,
-    });
+    }, past);
     assert.ok(errs.some((e) => e.field === "startTime"));
   });
 });

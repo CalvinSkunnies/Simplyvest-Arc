@@ -1,4 +1,5 @@
-import { formatUnits } from "viem";
+import { useState } from "react";
+import { formatUnits, type Address } from "viem";
 
 interface StreamData {
   creator: `0x${string}`;
@@ -40,11 +41,14 @@ interface Props {
   claimable: bigint;
   currentUser: `0x${string}`;
   isCreator: boolean;
+  isRecipient: boolean;
   isAuthority?: boolean;
   withdrawAmount: string;
   onWithdrawAmountChange: (val: string) => void;
   onWithdraw: () => void;
   onCancel: () => void;
+  onDepositMore: (amount: string) => void;
+  onTransfer: (newRecipient: Address) => void;
   onTrigger?: () => void;
   loading: boolean;
 }
@@ -55,20 +59,42 @@ export default function StreamCard({
   claimable,
   currentUser,
   isCreator,
+  isRecipient,
   isAuthority,
   withdrawAmount,
   onWithdrawAmountChange,
   onWithdraw,
   onCancel,
+  onDepositMore,
+  onTransfer,
   onTrigger,
   loading,
 }: Props) {
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositAmt, setDepositAmt] = useState("");
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferAddr, setTransferAddr] = useState("");
+
   const pct = progress(stream.amount, stream.amountWithdrawn);
   const done = stream.amountWithdrawn >= stream.amount;
-  const active = !isMilestone(stream)
-    ? !stream.cancelled && !done
-    : !stream.cancelled && !done;
+  const active = !stream.cancelled && !done;
   const mil = isMilestone(stream);
+
+  const handleDeposit = () => {
+    if (depositAmt) {
+      onDepositMore(depositAmt);
+      setDepositAmt("");
+      setShowDeposit(false);
+    }
+  };
+
+  const handleTransfer = () => {
+    if (transferAddr) {
+      onTransfer(transferAddr as Address);
+      setTransferAddr("");
+      setShowTransfer(false);
+    }
+  };
 
   return (
     <div className="card overflow-hidden animate-slide-up">
@@ -126,6 +152,7 @@ export default function StreamCard({
         {/* Actions */}
         {active && (
           <div className="flex flex-wrap gap-2">
+            {/* Withdraw */}
             {!mil && (
               <div className="flex gap-2 items-center flex-1 min-w-0">
                 <input
@@ -156,15 +183,56 @@ export default function StreamCard({
                 {loading ? "..." : "Withdraw All"}
               </button>
             )}
+
+            {/* Top Up (creator only, time streams) */}
             {!mil && isCreator && (
-              <button
-                onClick={onCancel}
-                disabled={loading}
-                className="btn-secondary text-sm px-4 py-2.5"
-              >
-                Cancel
-              </button>
+              showDeposit ? (
+                <div className="flex gap-2 items-center w-full">
+                  <input
+                    type="number"
+                    step="0.000001"
+                    min="0"
+                    placeholder="Amount to add"
+                    value={depositAmt}
+                    onChange={(e) => setDepositAmt(e.target.value)}
+                    className="input-field flex-1"
+                  />
+                  <button onClick={handleDeposit} disabled={loading || !depositAmt} className="btn-primary text-sm px-4 py-2.5">
+                    {loading ? "..." : "Confirm"}
+                  </button>
+                  <button onClick={() => setShowDeposit(false)} className="btn-secondary text-sm px-3 py-2.5">x</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowDeposit(true)} className="btn-secondary text-sm px-4 py-2.5">
+                  Top Up
+                </button>
+              )
             )}
+
+            {/* Transfer (recipient only) */}
+            {isRecipient && (
+              showTransfer ? (
+                <div className="flex gap-2 items-center w-full">
+                  <input
+                    type="text"
+                    placeholder="New recipient address"
+                    value={transferAddr}
+                    onChange={(e) => setTransferAddr(e.target.value)}
+                    className="input-field flex-1 font-mono text-xs"
+                  />
+                  <button onClick={handleTransfer} disabled={loading || !transferAddr} className="btn-primary text-sm px-4 py-2.5">
+                    {loading ? "..." : "Confirm"}
+                  </button>
+                  <button onClick={() => setShowTransfer(false)} className="btn-secondary text-sm px-3 py-2.5">x</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowTransfer(true)} className="btn-secondary text-sm px-4 py-2.5">
+                  Transfer
+                </button>
+              )
+            )}
+
+            {/* Trigger (authority only) */}
             {mil && isAuthority && !(stream as MilestoneStreamData).milestoneReached && (
               <button
                 onClick={onTrigger}
@@ -174,7 +242,9 @@ export default function StreamCard({
                 {loading ? "..." : "Trigger"}
               </button>
             )}
-            {mil && isCreator && !(stream as MilestoneStreamData).milestoneReached && (
+
+            {/* Cancel (creator or recipient) */}
+            {((!mil && (isCreator || isRecipient)) || (mil && (isCreator || isRecipient) && !(stream as MilestoneStreamData).milestoneReached)) && (
               <button
                 onClick={onCancel}
                 disabled={loading}

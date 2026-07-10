@@ -162,4 +162,70 @@ export const SIMPLY_VEST_ABI = [
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
   },
+  {
+    type: "function",
+    name: "batchCreateStreams",
+    inputs: [
+      {
+        type: "tuple[]",
+        components: [
+          { name: "recipient", type: "address" },
+          { name: "token", type: "address" },
+          { name: "amount", type: "uint256" },
+          { name: "startTime", type: "uint256" },
+          { name: "cliffTime", type: "uint256" },
+          { name: "endTime", type: "uint256" },
+        ],
+      },
+    ],
+    outputs: [{ name: "ids", type: "bytes32[]" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "depositMore",
+    inputs: [
+      { name: "streamId", type: "bytes32" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "transferStream",
+    inputs: [
+      { name: "streamId", type: "bytes32" },
+      { name: "newRecipient", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "batchCreateMilestoneStreams",
+    inputs: [
+      {
+        type: "tuple[]",
+        components: [
+          { name: "recipient", type: "address" },
+          { name: "token", type: "address" },
+          { name: "amount", type: "uint256" },
+          { name: "milestoneAuthority", type: "address" },
+        ],
+      },
+    ],
+    outputs: [{ name: "ids", type: "bytes32[]" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "transferMilestoneStream",
+    inputs: [
+      { name: "streamId", type: "bytes32" },
+      { name: "newRecipient", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
 ] as const;
