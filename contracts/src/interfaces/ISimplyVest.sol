@@ -87,13 +87,9 @@ interface ISimplyVest {
         bytes32 indexed streamId, address indexed creator, address indexed recipient, uint256 returnedToCreator
     );
 
-    event StreamDeposited(
-        bytes32 indexed streamId, address indexed creator, uint256 addedAmount, uint256 newTotal
-    );
+    event StreamDeposited(bytes32 indexed streamId, address indexed creator, uint256 addedAmount, uint256 newTotal);
 
-    event StreamTransferred(
-        bytes32 indexed streamId, address indexed oldRecipient, address indexed newRecipient
-    );
+    event StreamTransferred(bytes32 indexed streamId, address indexed oldRecipient, address indexed newRecipient);
 
     event MilestoneStreamTransferred(
         bytes32 indexed streamId, address indexed oldRecipient, address indexed newRecipient
@@ -149,9 +145,7 @@ interface ISimplyVest {
         external
         returns (bytes32 streamId);
 
-    function batchCreateMilestoneStreams(MilestoneStreamInput[] calldata inputs)
-        external
-        returns (bytes32[] memory ids);
+    function batchCreateMilestoneStreams(MilestoneStreamInput[] calldata inputs) external returns (bytes32[] memory ids);
 
     function transferMilestoneStream(bytes32 streamId, address newRecipient) external;
 
