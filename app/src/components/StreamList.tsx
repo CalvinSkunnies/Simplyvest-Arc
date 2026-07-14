@@ -67,7 +67,7 @@ export default function StreamList({ address, contract }: Props) {
       setLoading(false);
     };
     load();
-  }, [address, contract.txHash, refreshKey]);
+  }, [address, contract.txHash, contract.loading, refreshKey]);
 
   const myStreams = Object.entries(streams).filter(
     ([, s]) => s.creator.toLowerCase() === address.toLowerCase() || s.recipient.toLowerCase() === address.toLowerCase()

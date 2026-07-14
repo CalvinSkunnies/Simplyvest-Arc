@@ -10,8 +10,9 @@ import CreateMilestoneStream from "./CreateMilestoneStream";
 import BatchCreateStreams from "./BatchCreateStreams";
 import StreamList from "./StreamList";
 import TxToast from "./TxToast";
+import VestingCalculator from "./VestingCalculator";
 
-type Tab = "create" | "batch" | "milestone" | "streams";
+type Tab = "create" | "batch" | "milestone" | "streams" | "calculator";
 
 export default function AppPage() {
   const navigate = useNavigate();
@@ -66,6 +67,7 @@ export default function AppPage() {
               ["create", "New Stream"],
               ["batch", "Batch"],
               ["milestone", "New Milestone"],
+              ["calculator", "Calculator"],
             ] as [Tab, string][]
           ).map(([id, label]) => (
             <button
@@ -106,6 +108,9 @@ export default function AppPage() {
         )}
         {tab === "streams" && address && (
           <StreamList address={address} contract={contract} />
+        )}
+        {tab === "calculator" && address && (
+          <VestingCalculator address={address} contract={contract} />
         )}
       </main>
 
