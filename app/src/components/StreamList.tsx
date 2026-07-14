@@ -11,9 +11,7 @@ interface Props {
   contract: ReturnType<typeof import("../contract").useContract>;
 }
 
-const RAW_ADDRESS = import.meta.env.VITE_SIMPLY_VEST_ADDRESS;
-if (!RAW_ADDRESS) throw new Error("VITE_SIMPLY_VEST_ADDRESS is not set");
-const CONTRACT = RAW_ADDRESS as Address;
+const CONTRACT = import.meta.env.VITE_SIMPLY_VEST_ADDRESS as Address;
 const pc = () => createPublicClient({ chain: arcTestnet, transport: http() });
 
 export default function StreamList({ address, contract }: Props) {
