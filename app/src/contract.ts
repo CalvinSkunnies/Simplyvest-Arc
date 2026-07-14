@@ -14,9 +14,6 @@ import { formatError } from "./errors";
 import { arcTestnet } from "./arc-chain";
 import { SIMPLY_VEST_ABI } from "./abi";
 
-const RAW_ADDRESS = import.meta.env.VITE_SIMPLY_VEST_ADDRESS;
-if (!RAW_ADDRESS) throw new Error("VITE_SIMPLY_VEST_ADDRESS is not set");
-const CONTRACT = RAW_ADDRESS as Address;
 const USDC = "0x07865c6E87B9F70255377e024ace6630C1Eaa37F";
 
 function publicClient() {
@@ -57,7 +54,8 @@ export interface MilestoneStreamData {
   cancelled: boolean;
 }
 
-export function useContract() {
+export function useContract(contractAddress: Address) {
+  const CONTRACT = contractAddress;
   const [loading, setLoading] = useState(false);
   const [txHash, setTxHash] = useState<Hash | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -387,6 +385,7 @@ export function useContract() {
   }
 
   return {
+    address: CONTRACT,
     loading,
     txHash,
     error,

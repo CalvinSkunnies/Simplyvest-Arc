@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWallet } from "../wallet";
 import { useContract } from "../contract";
+import { useFactory } from "../factory";
 import ConnectWallet from "./ConnectWallet";
 import ThemeToggle from "./ThemeToggle";
 import Dashboard from "./Dashboard";
@@ -17,13 +18,31 @@ type Tab = "create" | "batch" | "milestone" | "streams" | "calculator";
 export default function AppPage() {
   const navigate = useNavigate();
   const { address, chainId, error, connect, disconnect } = useWallet();
-  const contract = useContract();
+  const { userContract, loading: deploying, error: factoryError, checkContract, deploy } = useFactory();
+  const [checking, setChecking] = useState(true);
+  const contract = useContract(userContract ?? ("0x0000000000000000000000000000000000000000" as const));
   const [tab, setTab] = useState<Tab>("streams");
+
+  useEffect(() => {
+    if (!address) { setChecking(false); return; }
+    setChecking(true);
+    checkContract(address).finally(() => setChecking(false));
+  }, [address, checkContract]);
+
+  const needsDeploy = address && !checking && !userContract;
+  const ready = address && userContract;
 
   const stats = useMemo(() => {
     if (!address) return { total: 0, active: 0, value: "", claimable: "" };
     return { total: 0, active: 0, value: "—", claimable: "—" };
   }, [address]);
+
+  const handleDeploy = async () => {
+    const addr = await deploy();
+    if (addr) {
+      await checkContract(address!);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg">
@@ -53,64 +72,93 @@ export default function AppPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <Dashboard
-          totalStreams={stats.total}
-          activeStreams={stats.active}
-          totalValue={stats.value}
-          claimableNow={stats.claimable}
-        />
-
-        <div className="flex gap-2 mb-8 border-b border-base-500/20 pb-3">
-          {(
-            [
-              ["streams", "Streams"],
-              ["create", "New Stream"],
-              ["batch", "Batch"],
-              ["milestone", "New Milestone"],
-              ["calculator", "Calculator"],
-            ] as [Tab, string][]
-          ).map(([id, label]) => (
+        {needsDeploy && (
+          <div className="card p-8 text-center mb-8 animate-fade-in">
+            <h2 className="section-title mb-2">Deploy Your SimplyVest Contract</h2>
+            <p className="text-text-secondary text-sm mb-6">
+              Each wallet gets its own SimplyVest contract. Deploy now to start creating streams.
+            </p>
             <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                tab === id
-                  ? "bg-plum-800/20 text-plum-300 border border-plum-800/30"
-                  : "text-text-muted hover:text-text-secondary"
-              }`}
+              onClick={handleDeploy}
+              disabled={deploying}
+              className="btn-primary"
             >
-              {label}
+              {deploying ? "Deploying..." : "Deploy Contract"}
             </button>
-          ))}
-        </div>
+            {factoryError && (
+              <p className="text-error text-xs mt-3">{factoryError}</p>
+            )}
+          </div>
+        )}
 
-        {tab === "create" && (
-          <CreateStream
-            onCreate={contract.createStream}
-            loading={contract.loading}
-          />
+        {checking && address && (
+          <div className="card p-8 text-center mb-8">
+            <p className="text-text-muted">Checking for deployed contract...</p>
+          </div>
         )}
-        {tab === "batch" && (
-          <BatchCreateStreams
-            onCreate={(inputs) => {
-              const amt = inputs.reduce((s, i) => s + Number(i.amount), 0);
-              if (amt <= 0) return;
-              contract.batchCreateStreams(inputs);
-            }}
-            loading={contract.loading}
-          />
-        )}
-        {tab === "milestone" && (
-          <CreateMilestoneStream
-            onCreate={contract.createMilestoneStream}
-            loading={contract.loading}
-          />
-        )}
-        {tab === "streams" && address && (
-          <StreamList address={address} contract={contract} />
-        )}
-        {tab === "calculator" && address && (
-          <VestingCalculator address={address} contract={contract} />
+
+        {ready && (
+          <>
+            <Dashboard
+              totalStreams={stats.total}
+              activeStreams={stats.active}
+              totalValue={stats.value}
+              claimableNow={stats.claimable}
+            />
+
+            <div className="flex gap-2 mb-8 border-b border-base-500/20 pb-3">
+              {(
+                [
+                  ["streams", "Streams"],
+                  ["create", "New Stream"],
+                  ["batch", "Batch"],
+                  ["milestone", "New Milestone"],
+                  ["calculator", "Calculator"],
+                ] as [Tab, string][]
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    tab === id
+                      ? "bg-plum-800/20 text-plum-300 border border-plum-800/30"
+                      : "text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "create" && (
+              <CreateStream
+                onCreate={contract.createStream}
+                loading={contract.loading}
+              />
+            )}
+            {tab === "batch" && (
+              <BatchCreateStreams
+                onCreate={(inputs) => {
+                  const amt = inputs.reduce((s, i) => s + Number(i.amount), 0);
+                  if (amt <= 0) return;
+                  contract.batchCreateStreams(inputs);
+                }}
+                loading={contract.loading}
+              />
+            )}
+            {tab === "milestone" && (
+              <CreateMilestoneStream
+                onCreate={contract.createMilestoneStream}
+                loading={contract.loading}
+              />
+            )}
+            {tab === "streams" && (
+              <StreamList address={address} contract={contract} />
+            )}
+            {tab === "calculator" && (
+              <VestingCalculator address={address} contract={contract} />
+            )}
+          </>
         )}
       </main>
 
