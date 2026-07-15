@@ -38,28 +38,21 @@ PRIVATE_KEY=your_wallet_private_key_here
 
 > **Security:** Never commit `.env`. It's in `.gitignore`.
 
-## Step 3: Deploy
+## Step 3: Deploy SimplyVestFactory
 
 ```bash
 # Using a private key from .env
-forge script script/Deploy.s.sol:DeploySimplyVest \
+forge script script/DeployFactory.s.sol:DeployFactory \
   --rpc-url arc_testnet \
   --broadcast \
-  -vvvv
-
-# Or use a hardware wallet / Ledger (sender signs)
-forge script script/Deploy.s.sol:DeploySimplyVestSafe \
-  --rpc-url arc_testnet \
-  --broadcast \
-  --sender $YOUR_ADDRESS \
   -vvvv
 ```
 
-## Step 4: Verify on Etherscan
+## Step 4: Verify on Explorer
 
 ```bash
-forge verify-contract <DEPLOYED_ADDRESS> \
-  src/SimplyVest.sol:SimplyVest \
+forge verify-contract <FACTORY_ADDRESS> \
+  src/SimplyVestFactory.sol:SimplyVestFactory \
   --rpc-url arc_testnet \
   --verifier-url https://testnet.arcscan.app/api/ \
   --etherscan-api-key <optional>
@@ -67,16 +60,21 @@ forge verify-contract <DEPLOYED_ADDRESS> \
 
 ## Step 5: Update Frontend
 
-Copy the deployed contract address into `dapp/.env.local`:
+Copy the deployed factory address into `app/.env.local`:
 ```
-VITE_SIMPLY_VEST_ADDRESS=0x...
+VITE_FACTORY_ADDRESS=0x...
 ```
+
+The app will now:
+1. Check the factory for your user-specific SimplyVest contract
+2. Prompt you to deploy one if none exists
+3. Use your personal contract for all operations
 
 ## Deployments
 
-| Network | Address | Block | Date |
-|---------|---------|-------|------|
-| Arc Testnet | TBD | TBD | TBD |
+| Network | Contract | Address | Block | Date |
+|---------|---------|---------|-------|------|
+| Arc Testnet | SimplyVestFactory | TBD | TBD | TBD |
 
 ## Troubleshooting
 

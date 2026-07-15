@@ -11,7 +11,6 @@ interface Props {
   contract: ReturnType<typeof import("../contract").useContract>;
 }
 
-const CONTRACT = import.meta.env.VITE_SIMPLY_VEST_ADDRESS as Address;
 const pc = () => createPublicClient({ chain: arcTestnet, transport: http() });
 
 export default function StreamList({ address, contract }: Props) {
@@ -31,22 +30,23 @@ export default function StreamList({ address, contract }: Props) {
     setLoading(true);
     const load = async () => {
       try {
+        const addr = contract.address!;
         const sc = await pc().readContract({
-          address: CONTRACT, abi: SIMPLY_VEST_ABI, functionName: "getStreamCount",
+          address: addr, abi: SIMPLY_VEST_ABI, functionName: "getStreamCount",
         });
         const msc = await pc().readContract({
-          address: CONTRACT, abi: SIMPLY_VEST_ABI, functionName: "getMilestoneStreamCount",
+          address: addr, abi: SIMPLY_VEST_ABI, functionName: "getMilestoneStreamCount",
         });
         const sIds: `0x${string}`[] = [];
         const mIds: `0x${string}`[] = [];
         for (let i = 0; i < Number(sc); i++) {
           sIds.push(await pc().readContract({
-            address: CONTRACT, abi: SIMPLY_VEST_ABI, functionName: "streamIds", args: [BigInt(i)],
+            address: addr, abi: SIMPLY_VEST_ABI, functionName: "streamIds", args: [BigInt(i)],
           }));
         }
         for (let i = 0; i < Number(msc); i++) {
           mIds.push(await pc().readContract({
-            address: CONTRACT, abi: SIMPLY_VEST_ABI, functionName: "milestoneStreamIds", args: [BigInt(i)],
+            address: addr, abi: SIMPLY_VEST_ABI, functionName: "milestoneStreamIds", args: [BigInt(i)],
           }));
         }
         if (cancelled) return;

@@ -21,6 +21,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Forge build
         run: forge build --sizes
@@ -67,7 +68,7 @@ jobs:
         working-directory: app
     env:
       NODE_OPTIONS: --no-deprecation
-      VITE_SIMPLY_VEST_ADDRESS: "0x0000000000000000000000000000000000000000"
+      VITE_FACTORY_ADDRESS: "0x0000000000000000000000000000000000000000"
     steps:
       - uses: actions/checkout@v4
 
